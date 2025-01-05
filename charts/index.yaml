@@ -1,0 +1,15 @@
+apiVersion: v1
+entries:
+  tsa:
+  - apiVersion: v2
+    appVersion: 2.0.0
+    created: "2025-01-05T19:40:15.20196855+08:00"
+    description: A Helm chart for TSA(TUST Student Archives) Management System By
+      20201312 Feilong Wang.
+    digest: 0f0760bc345a4543f4992e10d8bac68abd326328e61b77e329479c8310f3cab7
+    name: tsa
+    type: application
+    urls:
+    - charts/tsa-1.0.5.tgz
+    version: 1.0.5
+generated: "2025-01-05T19:40:15.200285582+08:00"
