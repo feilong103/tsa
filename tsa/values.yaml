@@ -1,0 +1,120 @@
+# Default values for TSA.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  # System name, can be overridden during Helm install by specifying a release name.
+  systemname: tsa
+  
+  # Kubernetes namespace, can be overridden by specifying a namespace during Helm install.
+  namespace: tsa
+  
+  # Docker repository URL, defaults to Alibaba Cloud's private registry.
+  repository: registry.cn-hangzhou.aliyuncs.com/feilong103
+
+  # Private registry image pull secrets, refer to the documentation: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  imagePullSecrets: []
+    # - name: aliyun-secret
+  
+  # Image pull policy, defaults to IfNotPresent, meaning images are only pulled if not present locally.
+  # Available options: Always, IfNotPresent, Never.
+  imagePullPolicy: IfNotPresent
+  
+  # Restart policy, defaults to Always, meaning containers will always restart.
+  # Available options: Always, OnFailure, Never.
+  restartPolicy: Always
+
+  # Container timezone, defaults to China timezone.
+  timezone: Asia/Shanghai
+
+web:
+  deploy:
+    # The number of replicas for the web service, default is 3.
+    replicas: 3
+    
+    # Web service resource limits, you can define CPU and memory limits.
+    resources: {}
+      # limits:
+      #   cpu: '1'               # Maximum 1 CPU per container
+      #   memory: 2Gi            # Maximum 2Gi memory per container
+      # requests:
+      #   cpu: '1'               # Request 1 CPU per container
+      #   memory: 2Gi            # Request 2Gi memory per container
+  
+  # Service type for the web service, default is ClusterIP. Can be changed to NodePort.
+  # Available options: ClusterIP, NodePort, LoadBalancer, ExternalName.
+  service:
+    type: ClusterIP
+  
+  ingress:
+    # Whether to enable Ingress, defaults to true. If the service type is NodePort, this should be disabled.
+    enabled: true
+    
+    # If Ingress is enabled, define the URL for accessing the application.
+    host: tsa.feilong.cn
+  
+  pvc:
+    # Storage class for PVC, defaults to rook-cephfs.
+    # Available options: Depends on your storage class setup.
+    storageClassName: rook-cephfs
+    
+    # Access mode for the PVC, specifies how the PVC can be mounted.
+    # Available options: ReadWriteOnce, ReadOnlyMany, ReadWriteMany.
+    accessModes: ReadWriteMany
+    
+    # Storage size for the PVC.
+    storage: 10Gi
+    
+  # Admin account username, defaults to admin.
+  account: admin
+
+server:
+  deploy:
+    # The number of replicas for the server service, default is 3.
+    replicas: 3
+    
+    # Server service resource configuration.
+    resources: {}
+      # limits:
+      #   cpu: '1'               # Maximum 1 CPU per container
+      #   memory: 2Gi            # Maximum 2Gi memory per container
+      # requests:
+      #   cpu: '1'               # Request 1 CPU per container
+      #   memory: 2Gi            # Request 2Gi memory per container
+
+mysql:
+  deploy:
+    # MySQL service resource configuration.
+    resources: {}
+      # limits:
+      #   cpu: '1'               # Maximum 1 CPU per container
+      #   memory: 2Gi            # Maximum 2Gi memory per container
+      # requests:
+      #   cpu: '1'               # Request 1 CPU per container
+      #   memory: 2Gi            # Request 2Gi memory per container
+  
+  pvc:
+    # MySQL PVC configuration, storage uses rook-ceph-block storage class.
+    # Available options: Depends on your storage class setup.
+    storageClassName: rook-ceph-block
+    
+    # Access mode for the PVC, ReadWriteOnce means it can only be mounted by a single Pod.
+    # Available options: ReadWriteOnce, ReadOnlyMany, ReadWriteMany.
+    accessModes: ReadWriteOnce
+    
+    # Storage size for MySQL data.
+    storage: 10Gi
+  
+  # MySQL root password (Base64 encoded).
+  password: Qb25172142
+
+redis:
+  deploy:
+    # Redis service resource configuration.
+    resources: {}
+      # limits:
+      #   cpu: '1'               # Maximum 1 CPU per container
+      #   memory: 2Gi            # Maximum 2Gi memory per container
+      # requests:
+      #   cpu: '1'               # Request 1 CPU per container
+      #   memory: 2Gi            # Request 2Gi memory per container

@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "tsa.systemname" . }}-admin-nginx-cm
+  namespace: {{ include "tsa.namespace" . }}
+  labels:
+    {{- include "tsa.labels" . | nindent 4 }}
+data:
+  default.conf: |-
+    # /etc/nginx/conf.d/default.conf
+    upstream django {
+      server {{ include "tsa.systemname" . }}-server;
+    }
+
+    server {
+      listen 80;
+
+      location / {
+        root /usr/share/nginx/html; # 指向你的静态文件目录
+        try_files $uri $uri/ /index.html;
+      }
+
+      location /api/ {
+        proxy_pass http://django/;
+      }
+
+      location /students-edit/api/ {
+        proxy_pass http://django/;
+      }
+
+    }

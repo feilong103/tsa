@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tsa.systemname" . }}-admin
+  namespace: {{ include "tsa.namespace" . }}
+  labels:
+    app: {{ include "tsa.systemname" . }}-admin
+    tier: front
+    {{- include "tsa.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.web.deploy.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "tsa.systemname" . }}-admin
+      tier: front
+      {{- include "tsa.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "tsa.systemname" . }}-admin
+        tier: front
+        {{- include "tsa.labels" . | nindent 8 }}
+    spec:
+      affinity:
+        podAntiAffinity: # 利用Pod反亲和性调度到不同节点
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - {{ include "tsa.systemname" . }}-admin
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      containers:
+      - name: {{ include "tsa.systemname" . }}-admin
+        image: {{ .Values.global.repository }}/tsa-admin:v1.0.0
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - name: {{ include "tsa.systemname" . }}-admin
+          protocol: TCP
+          containerPort: 80
+        resources:
+        {{- with .Values.web.deploy.resources }}
+          limits:
+            cpu: {{ .limits.cpu | default "1" }}
+            memory: {{ .limits.memory | default "2Gi" }}
+          requests:
+            cpu: {{ .requests.cpu | default "1" }}
+            memory: {{ .requests.memory | default "2Gi" }}
+        {{- else }}
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+        {{- end }}
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "nginx -s quit; sleep 10"]  # 在容器退出前先停止接收新流量
+        livenessProbe:  # 配置存活探针
+          httpGet:
+            path: /login
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 20
+          failureThreshold: 3
+        readinessProbe:  # 配置就绪探针
+          httpGet:
+            path: /login
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+        env:
+        - name: TZ # 设置容器时区
+          value: {{ .Values.global.timezone}}
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+        - name: nginx-log
+          mountPath: /var/log/nginx
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: {{ include "tsa.systemname" . }}-admin-nginx-cm
+      - name: nginx-log
+        persistentVolumeClaim:
+          claimName: {{ include "tsa.systemname" . }}-admin-nginx-log-pvc
+      restartPolicy: {{ .Values.global.restartPolicy }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

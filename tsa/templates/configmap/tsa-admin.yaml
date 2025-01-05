@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "tsa.systemname" . }}-admin-cm
+  namespace: {{ include "tsa.namespace" . }}
+  labels:
+    {{- include "tsa.labels" . | nindent 4 }}
+data:
+  username: '{{ .Values.web.account }}'

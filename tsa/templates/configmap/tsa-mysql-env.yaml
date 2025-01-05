@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "tsa.systemname" . }}-mysql-env
+  namespace: {{ include "tsa.namespace" . }}
+  labels:
+    {{- include "tsa.labels" . | nindent 4 }}
+data:
+  DATABASE_HOST: "{{ include "tsa.systemname" . }}-mysql"
+  DATABASE_NAME: "student_archives"
+  DATABASE_PORT: "3306"
+  DATABASE_USER: "root"
+  DATABASE_PASSWORD: "{{ .Values.mysql.password }}"

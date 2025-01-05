@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tsa.systemname" . }}-redis
+  namespace: {{ include "tsa.namespace" . }}
+  labels:
+    app: {{ include "tsa.systemname" . }}-redis
+    {{- include "tsa.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "tsa.systemname" . }}-redis
+      {{- include "tsa.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "tsa.systemname" . }}-redis
+        {{- include "tsa.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: redis
+        image: {{ .Values.global.repository }}/redis
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - name: {{ include "tsa.systemname" . }}-redis
+          protocol: TCP
+          containerPort: 6379
+        resources:
+        {{- with .Values.server.deploy.resources }}
+          limits:
+            cpu: {{ .limits.cpu | default "1" }}
+            memory: {{ .limits.memory | default "2Gi" }}
+          requests:
+            cpu: {{ .requests.cpu | default "1" }}
+            memory: {{ .requests.memory | default "2Gi" }}
+        {{- else }}
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+        {{- end }}
+        env:
+        - name: TZ # 设置容器时区
+          value: {{ .Values.global.timezone}}
+      restartPolicy: {{ .Values.global.restartPolicy }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

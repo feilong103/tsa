@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "tsa.systemname" . }}-server
+  namespace: {{ include "tsa.namespace" . }}
+  labels:
+    {{- include "tsa.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: {{ include "tsa.systemname" . }}-server
+    tier: backend
+    {{- include "tsa.labels" . | nindent 4 }}
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
+  type: ClusterIP
+  sessionAffinity: None

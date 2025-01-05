@@ -1,0 +1,21 @@
+{{- if .Values.web.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "tsa.systemname" . }}-web
+  namespace: {{ include "tsa.namespace" . }}
+  labels:
+    {{- include "tsa.labels" . | nindent 4 }}
+spec:
+  rules:
+    - host: {{ .Values.web.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "tsa.systemname" . }}-web
+                port:
+                  number: 80
+{{- end }}

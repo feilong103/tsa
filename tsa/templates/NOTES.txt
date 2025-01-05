@@ -1,0 +1,16 @@
+Welcome to TSA(TUST Student Archives) Management System!
+
+1. Program is being installed. You can check the installation progress by running the following command:
+   kubectl -n {{ include "tsa.namespace" . }} get pods -w
+
+2. Get the application URL by running these commands:
+{{- if .Values.web.ingress.enabled }}
+  echo http://{{ .Values.web.ingress.host }}
+{{- else if eq "NodePort" .Values.web.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ include "tsa.namespace" . }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "tsa.systemname" . }}-web)
+  export NODE_IP=$(kubectl get nodes --namespace {{ include "tsa.namespace" . }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- end }}
+
+3. The initial password for the admin account is stored in a Kubernetes Secret. You can retrieve it using the following command:
+   kubectl -n {{ include "tsa.namespace" . }} get secret {{ include "tsa.systemname" . }}-admin-secret -o jsonpath="{.data.root-password}" | base64 --decode

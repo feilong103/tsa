@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tsa.systemname" . }}-mysql
+  namespace: {{ include "tsa.namespace" . }}
+  labels:
+    app: {{ include "tsa.systemname" . }}-mysql
+    {{- include "tsa.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "tsa.systemname" . }}-mysql
+      {{- include "tsa.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "tsa.systemname" . }}-mysql
+        {{- include "tsa.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: mysql
+        image: {{ .Values.global.repository }}/mysql
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - name: {{ include "tsa.systemname" . }}-mysql
+          protocol: TCP
+          containerPort: 3306
+        resources:
+        {{- with .Values.server.deploy.resources }}
+          limits:
+            cpu: {{ .limits.cpu | default "1" }}
+            memory: {{ .limits.memory | default "2Gi" }}
+          requests:
+            cpu: {{ .requests.cpu | default "1" }}
+            memory: {{ .requests.memory | default "2Gi" }}
+        {{- else }}
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+        {{- end }}
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "tsa.systemname" . }}-mysql-secret
+              key: root-password
+        - name: TZ
+          value: {{ .Values.global.timezone}}
+        volumeMounts:
+        - name: mysql-config
+          mountPath: /etc/mysql/conf.d
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-config
+        configMap:
+          name: {{ include "tsa.systemname" . }}-mysql-cm
+      - name: mysql-data
+        persistentVolumeClaim:
+          claimName: mysql-data-pvc
+      restartPolicy: {{ .Values.global.restartPolicy }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

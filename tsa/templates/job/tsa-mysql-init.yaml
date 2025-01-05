@@ -1,0 +1,47 @@
+{{- if .Release.IsInstall -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "tsa.systemname" . }}-mysql-init
+  namespace: {{ include "tsa.namespace" . }}
+  labels:
+    {{- include "tsa.labels" . | nindent 4 }}
+spec:
+  template:
+    metadata:
+      name: {{ include "tsa.systemname" . }}-mysql-init
+    spec:
+      containers:
+      - name: mysql-init
+        image: {{ .Values.global.repository }}/mysql
+        command:
+          - /bin/sh
+          - -c
+          - |
+            # 等待 MySQL 容器启动并准备好接受连接
+            until mysql -h {{ include "tsa.systemname" . }}-mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "SELECT 1" ; do
+              echo "Waiting for MySQL to be ready..."
+              sleep 5
+            done
+            echo "MySQL is ready, running initialization scripts..."
+
+            # 执行初始化脚本
+            for f in /docker-entrypoint-initdb.d/*.sql; do
+              echo "Running $f..."
+              mysql -h {{ include "tsa.systemname" . }}-mysql -u root -p${MYSQL_ROOT_PASSWORD} < "$f"
+            done
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "tsa.systemname" . }}-mysql-secret
+              key: root-password
+        volumeMounts:
+        - name: mysql-init
+          mountPath: /docker-entrypoint-initdb.d
+      restartPolicy: OnFailure  # 在失败时重新启动
+      volumes:
+      - name: mysql-init
+        configMap:
+          name: {{ include "tsa.systemname" . }}-mysql-init-sql-cm  # 包含 SQL 脚本的 ConfigMap
+{{- end }}
